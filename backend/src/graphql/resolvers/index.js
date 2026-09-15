@@ -1,78 +1,500 @@
+const bcrypt = require('bcryptjs');
+const { signToken, setAuthCookie, clearAuthCookie } = require('../../utils/auth');
+const { pubsub, ACTIVITY_LOGGED, logActivity, getRecentLogs } = require('../../utils/pubsub');
+
+function requireAuth(user) {
+  if (!user || !user.userId) {
+    throw new Error('Non authentifié. Veuillez vous connecter pour accéder à vos projets.');
+  }
+}
+
+async function verifyProjectOwnership(prisma, projectId, userId) {
+  const project = await prisma.project.findUnique({
+    where: { id: Number(projectId) },
+  });
+  if (!project) {
+    throw new Error('Projet introuvable');
+  }
+  if (project.userId !== Number(userId)) {
+    throw new Error('Accès refusé : vous ne pouvez accéder qu’à vos propres projets.');
+  }
+  return project;
+}
+
+async function verifyTaskOwnership(prisma, taskId, userId) {
+  const task = await prisma.task.findUnique({
+    where: { id: Number(taskId) },
+    include: { project: true },
+  });
+  if (!task) {
+    throw new Error('Tâche introuvable');
+  }
+  if (task.project.userId !== Number(userId)) {
+    throw new Error('Accès refusé : cette tâche appartient au projet d’un autre utilisateur.');
+  }
+  return task;
+}
+
+async function verifySubTaskOwnership(prisma, subTaskId, userId) {
+  const subtask = await prisma.subTask.findUnique({
+    where: { id: Number(subTaskId) },
+    include: {
+      task: {
+        include: { project: true },
+      },
+    },
+  });
+  if (!subtask) {
+    throw new Error('Sous-tâche introuvable');
+  }
+  if (subtask.task.project.userId !== Number(userId)) {
+    throw new Error('Accès refusé : cette sous-tâche appartient au projet d’un autre utilisateur.');
+  }
+  return subtask;
+}
+
 const resolvers = {
-    Query: {
-      users: async (_, __, { prisma }) =>
-        prisma.user.findMany({
-          include: {
-            projects: {
-              include: {
-                tasks: {
-                  include: {
-                    subtasks: true, // ← essentiel
-                  },
+  Query: {
+    me: async (_, __, { prisma, user }) => {
+      if (!user) return null;
+      return prisma.user.findUnique({
+        where: { id: user.userId },
+        include: {
+          projects: {
+            include: {
+              tasks: {
+                include: {
+                  subtasks: true,
                 },
               },
             },
           },
-        }),
-       user: async (_, { id }, { prisma }) => prisma.user.findUnique({ where: { id: Number(id) }, include: { projects: true } }),
-      usersId: async (_, __, { prisma }) =>
-        prisma.user.findMany({
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        }),
-        getProjectTasks: async (_, { projectId }, { prisma }) => {
-          try {
-            const project = await prisma.project.findUnique({
-              where: { id: Number(projectId) },
-              include: { tasks: true },  // Inclure les tâches associées au projet
-            });
-        
-            // Si aucun projet n'est trouvé, on retourne un tableau vide
-            return project ? project.tasks : [];
-          } catch (error) {
-            console.error('Error fetching project tasks:', error);
-            throw new Error('Erreur lors de la récupération des tâches du projet');
-          }
         },
-        
-      },
-  
-    Mutation: {
-      createUser: async (_, args, { prisma }) =>
-        prisma.user.create({ data: { name: args.name, email: args.email } }),
-  
-      createProject: async (_, args, { prisma }) =>
-        prisma.project.create({ data: { name: args.name, userId: Number(args.userId) } }),
-  
-      createTask: async (_, args, { prisma }) => {
-        return prisma.task.create({
-          data: {
-            title: args.title,
-            projectId: Number(args.projectId),
-            status: args.status || 'todo', // Ajout du statut par défaut 'todo'
-            completed: false, // Statut de 'completed' par défaut à false
-          },
-          include: {
-            project: true, // Inclure les informations du projet, si nécessaire
-          },
-        });
-      },
-      
-      
-      createSubTask: async (_, args, { prisma }) =>
-        prisma.subTask.create({ data: { title: args.title, taskId: Number(args.taskId) } }),
-      updateTaskStatus: async (_, { taskId, status }, { prisma }) => {
-        return prisma.task.update({
-          where: { id: Number(taskId) },
-          data: { status },
-        });
-      },
-      
+      });
     },
-  };
-  
-  module.exports = { resolvers };
-  
+
+    users: async (_, __, { prisma }) => {
+      return prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
+    },
+
+    usersId: async (_, __, { prisma }) => {
+      return prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
+    },
+
+    user: async (_, { id }, { prisma, user: authUser }) => {
+      requireAuth(authUser);
+      if (Number(authUser.userId) !== Number(id)) {
+        throw new Error('Accès refusé : profil utilisateur inaccessible');
+      }
+      return prisma.user.findUnique({
+        where: { id: Number(id) },
+        include: {
+          projects: {
+            include: {
+              tasks: {
+                include: {
+                  subtasks: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    },
+
+    myProjects: async (_, __, { prisma, user }) => {
+      requireAuth(user);
+      return prisma.project.findMany({
+        where: { userId: user.userId },
+        include: {
+          tasks: {
+            include: {
+              subtasks: true,
+            },
+          },
+        },
+        orderBy: { id: 'desc' },
+      });
+    },
+
+    getProjectTasks: async (_, { projectId }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyProjectOwnership(prisma, projectId, user.userId);
+
+      const project = await prisma.project.findUnique({
+        where: { id: Number(projectId) },
+        include: {
+          tasks: {
+            include: {
+              subtasks: true,
+            },
+          },
+        },
+      });
+      return project ? project.tasks : [];
+    },
+
+    getRecentLogs: () => {
+      return getRecentLogs();
+    },
+  },
+
+  Mutation: {
+    register: async (_, { name, email, password }, { prisma, res }) => {
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        throw new Error('Un utilisateur avec cet email existe déjà');
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+        },
+      });
+
+      const token = signToken(newUser);
+      setAuthCookie(res, token);
+
+      logActivity({
+        type: 'AUTH',
+        action: 'REGISTER',
+        message: `Nouvel utilisateur inscrit : "${newUser.name}" (${newUser.email})`,
+        user: newUser.name,
+        details: { userId: newUser.id, email: newUser.email },
+      });
+
+      return {
+        user: newUser,
+        token,
+      };
+    },
+
+    login: async (_, { email, password }, { prisma, res }) => {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        throw new Error('Identifiants invalides');
+      }
+
+      if (user.password) {
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) {
+          throw new Error('Identifiants invalides');
+        }
+      }
+
+      const token = signToken(user);
+      setAuthCookie(res, token);
+
+      logActivity({
+        type: 'AUTH',
+        action: 'LOGIN',
+        message: `Connexion réussie de "${user.name}" (${user.email})`,
+        user: user.name,
+        details: { userId: user.id },
+      });
+
+      return {
+        user,
+        token,
+      };
+    },
+
+    logout: async (_, __, { res, user }) => {
+      clearAuthCookie(res);
+      logActivity({
+        type: 'AUTH',
+        action: 'LOGOUT',
+        message: `Déconnexion effectuée`,
+        user: user?.name || 'Anonymous',
+      });
+      return true;
+    },
+
+    createUser: async (_, { name, email, password }, { prisma, user }) => {
+      const hashedPassword = password ? await bcrypt.hash(password, 10) : '';
+      const created = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+        },
+      });
+
+      logActivity({
+        type: 'CREATE',
+        action: 'CREATE_USER',
+        message: `Utilisateur créé : "${created.name}"`,
+        user: user?.name || 'System',
+      });
+
+      return created;
+    },
+
+    createProject: async (_, { name }, { prisma, user }) => {
+      requireAuth(user);
+
+      const project = await prisma.project.create({
+        data: {
+          name,
+          userId: user.userId,
+        },
+        include: {
+          user: true,
+          tasks: {
+            include: {
+              subtasks: true,
+            },
+          },
+        },
+      });
+
+      logActivity({
+        type: 'CREATE',
+        action: 'CREATE_PROJECT',
+        message: `Projet créé : "${project.name}" (ID: ${project.id})`,
+        user: user.name,
+        details: { projectId: project.id, projectName: project.name },
+      });
+
+      return project;
+    },
+
+    deleteProject: async (_, { id }, { prisma, user }) => {
+      requireAuth(user);
+      const projectId = Number(id);
+      const project = await verifyProjectOwnership(prisma, projectId, user.userId);
+
+      const tasks = await prisma.task.findMany({ where: { projectId } });
+      for (const task of tasks) {
+        await prisma.subTask.deleteMany({ where: { taskId: task.id } });
+      }
+      await prisma.task.deleteMany({ where: { projectId } });
+      await prisma.project.delete({ where: { id: projectId } });
+
+      logActivity({
+        type: 'DELETE',
+        action: 'DELETE_PROJECT',
+        message: `Projet supprimé : "${project.name}" (ID: ${projectId})`,
+        user: user.name,
+      });
+
+      return true;
+    },
+
+    createTask: async (_, { title, projectId, status = 'todo' }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyProjectOwnership(prisma, projectId, user.userId);
+
+      const task = await prisma.task.create({
+        data: {
+          title,
+          projectId: Number(projectId),
+          status: status || 'todo',
+          completed: false,
+        },
+        include: {
+          project: true,
+          subtasks: true,
+        },
+      });
+
+      logActivity({
+        type: 'CREATE',
+        action: 'CREATE_TASK',
+        message: `Tâche créée : "${task.title}" [Statut: ${task.status}] (Projet #${task.projectId})`,
+        user: user.name,
+        details: { taskId: task.id, projectId: task.projectId, status: task.status },
+      });
+
+      return task;
+    },
+
+    updateTaskStatus: async (_, { taskId, status }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyTaskOwnership(prisma, taskId, user.userId);
+
+      const task = await prisma.task.update({
+        where: { id: Number(taskId) },
+        data: { status },
+        include: {
+          subtasks: true,
+          project: true,
+        },
+      });
+
+      logActivity({
+        type: 'UPDATE',
+        action: 'UPDATE_TASK_STATUS',
+        message: `Statut de la tâche #${task.id} ("${task.title}") mis à jour -> [${status}]`,
+        user: user.name,
+        details: { taskId: task.id, newStatus: status },
+      });
+
+      return task;
+    },
+
+    updateTaskTitle: async (_, { taskId, title }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyTaskOwnership(prisma, taskId, user.userId);
+
+      const task = await prisma.task.update({
+        where: { id: Number(taskId) },
+        data: { title },
+        include: {
+          subtasks: true,
+          project: true,
+        },
+      });
+
+      logActivity({
+        type: 'UPDATE',
+        action: 'UPDATE_TASK_TITLE',
+        message: `Titre de la tâche #${task.id} renommé -> "${title}"`,
+        user: user.name,
+        details: { taskId: task.id, title },
+      });
+
+      return task;
+    },
+
+    deleteTask: async (_, { taskId }, { prisma, user }) => {
+      requireAuth(user);
+      const existing = await verifyTaskOwnership(prisma, taskId, user.userId);
+      const id = Number(taskId);
+
+      await prisma.subTask.deleteMany({ where: { taskId: id } });
+      await prisma.task.delete({ where: { id } });
+
+      logActivity({
+        type: 'DELETE',
+        action: 'DELETE_TASK',
+        message: `Tâche supprimée : "${existing.title}" (ID: ${id})`,
+        user: user.name,
+        details: { taskId: id },
+      });
+
+      return true;
+    },
+
+    createSubTask: async (_, { title, taskId }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyTaskOwnership(prisma, taskId, user.userId);
+
+      const subtask = await prisma.subTask.create({
+        data: {
+          title,
+          taskId: Number(taskId),
+          done: false,
+        },
+        include: {
+          task: true,
+        },
+      });
+
+      logActivity({
+        type: 'CREATE',
+        action: 'CREATE_SUBTASK',
+        message: `Sous-tâche ajoutée : "${subtask.title}" (sur la tâche #${subtask.taskId})`,
+        user: user.name,
+        details: { subTaskId: subtask.id, taskId: subtask.taskId },
+      });
+
+      return subtask;
+    },
+
+    toggleSubTask: async (_, { id }, { prisma, user }) => {
+      requireAuth(user);
+      const subtask = await verifySubTaskOwnership(prisma, id, user.userId);
+      const subtaskId = Number(id);
+
+      const updated = await prisma.subTask.update({
+        where: { id: subtaskId },
+        data: { done: !subtask.done },
+        include: { task: true },
+      });
+
+      logActivity({
+        type: 'UPDATE',
+        action: 'TOGGLE_SUBTASK',
+        message: `Sous-tâche #${updated.id} ("${updated.title}") marquée comme ${updated.done ? 'TERMINÉE' : 'À FAIRE'}`,
+        user: user.name,
+        details: { subTaskId: updated.id, done: updated.done },
+      });
+
+      return updated;
+    },
+
+    deleteSubTask: async (_, { id }, { prisma, user }) => {
+      requireAuth(user);
+      const subtask = await verifySubTaskOwnership(prisma, id, user.userId);
+      const subtaskId = Number(id);
+
+      await prisma.subTask.delete({ where: { id: subtaskId } });
+
+      logActivity({
+        type: 'DELETE',
+        action: 'DELETE_SUBTASK',
+        message: `Sous-tâche #${subtaskId} ("${subtask.title}") supprimée`,
+        user: user.name,
+        details: { subTaskId: subtaskId },
+      });
+
+      return true;
+    },
+  },
+
+  Subscription: {
+    activityLogged: {
+      subscribe: () => pubsub.asyncIterator([ACTIVITY_LOGGED]),
+    },
+  },
+
+  Task: {
+    subtasks: async (parent, _, { prisma }) => {
+      if (parent.subtasks) return parent.subtasks;
+      return prisma.subTask.findMany({ where: { taskId: parent.id } });
+    },
+    project: async (parent, _, { prisma }) => {
+      if (parent.project) return parent.project;
+      return prisma.project.findUnique({ where: { id: parent.projectId } });
+    },
+  },
+
+  Project: {
+    user: async (parent, _, { prisma }) => {
+      if (parent.user) return parent.user;
+      return prisma.user.findUnique({ where: { id: parent.userId } });
+    },
+    tasks: async (parent, _, { prisma }) => {
+      if (parent.tasks) return parent.tasks;
+      return prisma.task.findMany({
+        where: { projectId: parent.id },
+        include: { subtasks: true },
+      });
+    },
+  },
+
+  SubTask: {
+    task: async (parent, _, { prisma }) => {
+      if (parent.task) return parent.task;
+      return prisma.task.findUnique({ where: { id: parent.taskId } });
+    },
+  },
+};
+
+module.exports = { resolvers };

@@ -8,44 +8,78 @@ const typeDefs = gql`
     projects: [Project!]!
   }
 
+  type AuthPayload {
+    user: User!
+    token: String!
+  }
+
   type Project {
     id: ID!
     name: String!
     user: User!
+    userId: Int!
     tasks: [Task!]!
   }
 
-type Task {
-  id: ID!
-  title: String!
-  completed: Boolean!
-  status: String!           # ← ajoute ce champ
-  project: Project!
-  subtasks: [SubTask!]!
-}
-
+  type Task {
+    id: ID!
+    title: String!
+    completed: Boolean!
+    status: String!
+    project: Project!
+    projectId: Int!
+    subtasks: [SubTask!]!
+  }
 
   type SubTask {
     id: ID!
     title: String!
     done: Boolean!
     task: Task!
+    taskId: Int!
+  }
+
+  type ActivityLog {
+    id: ID!
+    timestamp: String!
+    type: String!
+    action: String!
+    message: String!
+    user: String
+    details: String
   }
 
   type Query {
-    users: [User!]
+    me: User
+    users: [User!]!
     usersId: [User!]!
     user(id: ID!): User
-    getProjectTasks(projectId: Int!): [Task!]! 
+    myProjects: [Project!]!
+    getProjectTasks(projectId: Int!): [Task!]!
+    getRecentLogs: [ActivityLog!]!
   }
 
   type Mutation {
-    createUser(name: String!, email: String!): User
-    createProject(name: String!, userId: Int!): Project
-    createTask(title: String!, projectId: Int!): Task
-    createSubTask(title: String!, taskId: Int!): SubTask
+    register(name: String!, email: String!, password: String!): AuthPayload!
+    login(email: String!, password: String!): AuthPayload!
+    logout: Boolean!
 
-  updateTaskStatus(taskId: Int!, status: String!): Task 
+    createUser(name: String!, email: String!, password: String): User!
+    createProject(name: String!, userId: Int): Project!
+    deleteProject(id: Int!): Boolean!
+
+    createTask(title: String!, projectId: Int!, status: String): Task!
+    updateTaskStatus(taskId: Int!, status: String!): Task!
+    updateTaskTitle(taskId: Int!, title: String!): Task!
+    deleteTask(taskId: Int!): Boolean!
+
+    createSubTask(title: String!, taskId: Int!): SubTask!
+    toggleSubTask(id: Int!): SubTask!
+    deleteSubTask(id: Int!): Boolean!
+  }
+
+  type Subscription {
+    activityLogged: ActivityLog!
   }
 `;
 
