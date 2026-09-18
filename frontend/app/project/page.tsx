@@ -7,7 +7,18 @@ import { GET_MY_PROJECTS } from '@/app/lib/graphql/queries';
 import { useAuth } from '../lib/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FolderPlus, Trash2, ArrowRight, Kanban, Plus, ShieldAlert, LogIn } from 'lucide-react';
+import {
+  FolderPlus,
+  Trash2,
+  ArrowRight,
+  Kanban,
+  Plus,
+  ShieldAlert,
+  LogIn,
+  Layers,
+  Sparkles,
+  CheckCircle2,
+} from 'lucide-react';
 
 export default function ProjectsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -16,9 +27,12 @@ export default function ProjectsPage() {
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const { data: myProjectsData, loading: myProjectsLoading, refetch: refetchProjects } = useQuery(GET_MY_PROJECTS, {
-    skip: !user,
-  });
+  const { data: myProjectsData, loading: myProjectsLoading, refetch: refetchProjects } = useQuery(
+    GET_MY_PROJECTS,
+    {
+      skip: !user,
+    }
+  );
 
   const [createProject] = useMutation(CREATE_PROJECT);
   const [deleteProject] = useMutation(DELETE_PROJECT);
@@ -53,10 +67,12 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
+  const handleDeleteProject = async (e: React.MouseEvent, projectId: string, projectName: string) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!confirm('Voulez-vous vraiment supprimer ce projet et toutes ses tâches ?')) return;
+    if (!confirm(`Supprimer définitivement le projet "${projectName}" et toutes ses tâches associées ?`)) {
+      return;
+    }
 
     try {
       await deleteProject({
@@ -70,26 +86,26 @@ export default function ProjectsPage() {
 
   if (!user && !authLoading) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-16 text-center">
-        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <ShieldAlert className="w-6 h-6" />
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-lg">
+          <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xs">
+            <ShieldAlert className="w-7 h-7" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentification requise</h2>
-          <p className="text-gray-600 text-sm mb-6">
-            Vous devez être connecté pour accéder à vos projets personnels et gérer vos tâches.
+          <h2 className="text-2xl font-bold text-zinc-900 mb-2 tracking-tight">Accès restreint</h2>
+          <p className="text-zinc-600 text-sm mb-6 leading-relaxed">
+            Vous devez être connecté avec votre compte pour accéder à vos tableaux de bord et gérer vos tâches.
           </p>
-          <div className="flex justify-center gap-3">
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl shadow transition text-sm cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-xs transition text-sm cursor-pointer"
             >
               <LogIn className="w-4 h-4" />
               <span>Se connecter</span>
             </Link>
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium px-5 py-2.5 rounded-xl shadow-xs transition text-sm cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 bg-white hover:bg-zinc-50 border border-zinc-300 text-zinc-700 font-medium px-5 py-2.5 rounded-xl shadow-2xs transition text-sm cursor-pointer"
             >
               <span>Créer un compte</span>
             </Link>
@@ -102,28 +118,36 @@ export default function ProjectsPage() {
   const myProjects = myProjectsData?.myProjects || [];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full flex-1">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-zinc-200/80">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mes Projets</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {user ? `Connecté en tant que ${user.name} (${user.email})` : 'Chargement...'}
+          <div className="flex items-center gap-2.5 mb-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">Mes Projets</h1>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+              {myProjects.length} {myProjects.length > 1 ? 'projets' : 'projet'}
+            </span>
+          </div>
+          <p className="text-zinc-500 text-xs sm:text-sm">
+            {user ? `Connecté en tant que ${user.name} (${user.email})` : 'Chargement de la session...'}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Formulaire création de projet */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Creation Form (Left Sidebar) */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm sticky top-24">
-            <div className="flex items-center gap-2 mb-4 text-indigo-600 font-semibold text-lg">
-              <FolderPlus className="w-5 h-5" />
-              <h2>Nouveau Projet</h2>
+          <div className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-xs sticky top-24">
+            <div className="flex items-center gap-2.5 mb-4 text-zinc-900 font-bold text-base">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <FolderPlus className="w-4 h-4" />
+              </div>
+              <h2>Créer un nouveau projet</h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
                   Nom du projet
                 </label>
                 <input
@@ -131,73 +155,81 @@ export default function ProjectsPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="ex: Refonte Application Mobile"
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+                  placeholder="ex: Sprint Backend GraphQL"
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={creating || !name.trim()}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-xl shadow transition flex items-center justify-center gap-2 text-sm cursor-pointer"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-xl shadow-xs hover:shadow-md transition flex items-center justify-center gap-2 text-sm cursor-pointer group"
               >
-                <Plus className="w-4 h-4" />
-                {creating ? 'Création en cours...' : 'Créer le projet'}
+                <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
+                {creating ? 'Création...' : 'Créer et ouvrir'}
               </button>
             </form>
           </div>
         </div>
 
-        {/* Liste des projets de l'utilisateur */}
+        {/* Projects Grid (Right Content) */}
         <div className="lg:col-span-2">
           {myProjectsLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-xs text-zinc-500">Chargement de vos projets...</p>
             </div>
           ) : myProjects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myProjects.map((project: any) => (
-                <div
-                  key={project.id}
-                  onClick={() => router.push(`/kanban?projectId=${project.id}`)}
-                  className="bg-white p-5 rounded-2xl border border-gray-200 hover:border-indigo-400 hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition">
-                        <Kanban className="w-5 h-5" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {myProjects.map((project: any) => {
+                const taskCount = project.tasks?.length || 0;
+                return (
+                  <div
+                    key={project.id}
+                    onClick={() => router.push(`/kanban?projectId=${project.id}`)}
+                    className="bg-white p-5 rounded-2xl border border-zinc-200/80 hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-200 shadow-2xs">
+                          <Kanban className="w-5 h-5" />
+                        </div>
+
+                        <button
+                          onClick={(e) => handleDeleteProject(e, project.id, project.name)}
+                          className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
+                          title="Supprimer le projet"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900 group-hover:text-indigo-600 transition">
-                          {project.name}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {project.tasks?.length || 0} tâche(s)
-                        </p>
-                      </div>
+
+                      <h3 className="font-bold text-zinc-900 group-hover:text-indigo-600 transition-colors text-base line-clamp-1">
+                        {project.name}
+                      </h3>
+                      <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>{taskCount} {taskCount > 1 ? 'tâches enregistrées' : 'tâche enregistrée'}</span>
+                      </p>
                     </div>
 
-                    <button
-                      onClick={(e) => handleDeleteProject(e, project.id)}
-                      className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition cursor-pointer"
-                      title="Supprimer le projet"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="mt-5 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-indigo-600">
+                      <span>Ouvrir le Kanban</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-200" />
+                    </div>
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-indigo-600">
-                    <span>Ouvrir le Kanban</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
-            <div className="text-center py-12 bg-white rounded-2xl border border-gray-200 p-8">
-              <Kanban className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600 font-medium">Vous n&apos;avez aucun projet pour le moment</p>
-              <p className="text-gray-400 text-sm mt-1">Créez votre premier projet via le formulaire à gauche.</p>
+            <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-zinc-300 p-8">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-50 border border-zinc-200 flex items-center justify-center mx-auto mb-4 text-zinc-400">
+                <Kanban className="w-7 h-7" />
+              </div>
+              <h3 className="text-base font-bold text-zinc-800">Aucun projet créé pour l&apos;instant</h3>
+              <p className="text-zinc-500 text-xs sm:text-sm mt-1 max-w-sm mx-auto">
+                Commencez par créer votre premier projet avec le formulaire pour organiser vos tâches en Kanban.
+              </p>
             </div>
           )}
         </div>

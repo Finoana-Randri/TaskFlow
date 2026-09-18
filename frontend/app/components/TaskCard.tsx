@@ -24,23 +24,23 @@ export function TaskCardView({
 }) {
   return (
     <div
-      className={`bg-white border rounded-xl p-4 transition-all duration-200 ${
+      className={`bg-white border rounded-xl p-3.5 transition-all duration-200 ${
         isOverlay
-          ? 'shadow-2xl ring-2 ring-indigo-500/50 border-indigo-400 rotate-1 scale-[1.02] cursor-grabbing opacity-95'
-          : 'border-gray-200 shadow-xs hover:shadow-md group/card'
+          ? 'shadow-2xl ring-2 ring-indigo-500/60 border-indigo-400 rotate-1 scale-[1.02] cursor-grabbing opacity-95 bg-white'
+          : 'border-zinc-200/80 shadow-2xs hover:shadow-md hover:border-zinc-300 group/card'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2 flex-1">
+        <div className="flex items-start gap-2 flex-1 min-w-0">
           <button
             type="button"
             {...dragHandleProps}
-            className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-indigo-600 p-1 -ml-1 rounded-md hover:bg-gray-100 transition touch-none select-none flex-shrink-0"
+            className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-indigo-600 p-1 -ml-1 rounded-md hover:bg-zinc-100 transition-colors touch-none select-none flex-shrink-0"
             title="Glisser pour déplacer"
           >
             <GripVertical className="w-4 h-4" />
           </button>
-          <h3 className="font-semibold text-sm text-gray-900 leading-snug flex-1 pt-0.5">
+          <h3 className="font-semibold text-sm text-zinc-900 leading-snug flex-1 pt-0.5 break-words">
             {task.title}
           </h3>
         </div>
@@ -50,7 +50,7 @@ export function TaskCardView({
             type="button"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onDelete}
-            className="opacity-0 group-hover/card:opacity-100 text-gray-400 hover:text-red-500 p-1 rounded-md hover:bg-red-50 transition cursor-pointer"
+            className="opacity-0 group-hover/card:opacity-100 text-zinc-400 hover:text-rose-600 p-1 rounded-md hover:bg-rose-50 transition-all cursor-pointer flex-shrink-0"
             title="Supprimer la tâche"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -117,7 +117,7 @@ export default function TaskCard({
       <div
         ref={setNodeRef}
         style={style}
-        className="h-24 border-2 border-dashed border-indigo-300 bg-indigo-50/50 rounded-xl transition-all duration-200 opacity-60"
+        className="h-24 border-2 border-dashed border-indigo-300 bg-indigo-50/40 rounded-xl transition-all duration-200 opacity-60"
       />
     );
   }

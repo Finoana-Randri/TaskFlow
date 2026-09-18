@@ -10,11 +10,11 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
-  Radio,
   Pause,
   Play,
   Maximize2,
   Minimize2,
+  Filter,
 } from 'lucide-react';
 
 export interface LogItem {
@@ -32,6 +32,7 @@ export default function LiveLogs() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [filterType, setFilterType] = useState<string>('ALL');
   const logsContainerRef = useRef<HTMLDivElement>(null);
 
   // Load initial logs with backup polling
@@ -62,7 +63,6 @@ export default function LiveLogs() {
     if (subData?.activityLogged && !isPaused) {
       const newLog: LogItem = subData.activityLogged;
       setLogs((prev) => {
-        // Prevent duplicate IDs if already present
         if (prev.some((l) => l.id === newLog.id)) return prev;
         return [...prev, newLog];
       });
@@ -74,7 +74,7 @@ export default function LiveLogs() {
     if (isExpanded && !isPaused && logsContainerRef.current) {
       logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
     }
-  }, [logs, isExpanded, isPaused]);
+  }, [logs, isExpanded, isPaused, filterType]);
 
   const clearLogs = () => {
     setLogs([]);
@@ -83,15 +83,15 @@ export default function LiveLogs() {
   const getBadgeStyle = (type: string) => {
     switch (type?.toUpperCase()) {
       case 'AUTH':
-        return 'bg-purple-950 text-purple-300 border-purple-800';
+        return 'bg-violet-950/80 text-violet-300 border-violet-800/80';
       case 'CREATE':
-        return 'bg-emerald-950 text-emerald-300 border-emerald-800';
+        return 'bg-emerald-950/80 text-emerald-300 border-emerald-800/80';
       case 'UPDATE':
-        return 'bg-blue-950 text-blue-300 border-blue-800';
+        return 'bg-sky-950/80 text-sky-300 border-sky-800/80';
       case 'DELETE':
-        return 'bg-rose-950 text-rose-300 border-rose-800';
+        return 'bg-rose-950/80 text-rose-300 border-rose-800/80';
       default:
-        return 'bg-gray-800 text-gray-300 border-gray-700';
+        return 'bg-zinc-800 text-zinc-300 border-zinc-700';
     }
   };
 
@@ -108,59 +108,83 @@ export default function LiveLogs() {
     }
   };
 
+  const filteredLogs = logs.filter((log) => {
+    if (filterType === 'ALL') return true;
+    return log.type?.toUpperCase() === filterType;
+  });
+
   return (
     <div className="w-full mt-8">
       <div
-        className={`bg-gray-950 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 font-mono text-xs ${
+        className={`bg-zinc-950 border border-zinc-800/90 rounded-2xl shadow-xl overflow-hidden transition-all duration-200 font-mono text-xs ${
           isMaximized ? 'fixed inset-4 z-50 flex flex-col' : ''
         }`}
       >
         {/* Header Bar */}
-        <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+        <div className="bg-zinc-900/90 border-b border-zinc-800/80 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-              <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
             </div>
 
-            <div className="flex items-center space-x-2 text-gray-200 font-semibold pl-2 border-l border-gray-800">
-              <Terminal className="w-4 h-4 text-indigo-400" />
-              <span>Backend Activity Stream</span>
+            <div className="flex items-center space-x-2 text-zinc-200 font-semibold pl-2 border-l border-zinc-800">
+              <Terminal className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-xs">Flux d&apos;activité Backend</span>
             </div>
 
             <div className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-400 text-[10px]">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>{subError ? 'FALLBACK' : 'LIVE WS'}</span>
+              <span>{subError ? 'POLLING' : 'LIVE WS'}</span>
             </div>
 
-            <span className="text-gray-500 text-[11px]">({logs.length} logs)</span>
+            <span className="text-zinc-500 text-[11px] hidden sm:inline">
+              ({filteredLogs.length} / {logs.length} logs)
+            </span>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5">
+            {/* Filter buttons */}
+            <div className="hidden md:flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5 text-[10px]">
+              {['ALL', 'AUTH', 'CREATE', 'UPDATE', 'DELETE'].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setFilterType(type)}
+                  className={`px-2 py-0.5 rounded transition ${
+                    filterType === type
+                      ? 'bg-zinc-800 text-white font-semibold'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={() => setIsPaused(!isPaused)}
-              className={`p-1.5 rounded-lg border transition ${
+              className={`p-1.5 rounded-lg border transition cursor-pointer ${
                 isPaused
-                  ? 'bg-amber-900/40 border-amber-700 text-amber-300'
-                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
+                  ? 'bg-amber-950/60 border-amber-700 text-amber-300'
+                  : 'bg-zinc-800/80 border-zinc-700 text-zinc-400 hover:text-zinc-200'
               }`}
-              title={isPaused ? 'Reprendre le flux' : 'Mettre en pause le flux'}
+              title={isPaused ? 'Reprendre le flux' : 'Mettre en pause'}
             >
               {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
             </button>
 
             <button
               onClick={clearLogs}
-              className="p-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-red-400 hover:bg-gray-700 transition"
-              title="Effacer les logs"
+              className="p-1.5 rounded-lg bg-zinc-800/80 border border-zinc-700 text-zinc-400 hover:text-rose-400 hover:bg-zinc-700 transition cursor-pointer"
+              title="Effacer l'historique"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
 
             <button
               onClick={() => setIsMaximized(!isMaximized)}
-              className="p-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition"
+              className="p-1.5 rounded-lg bg-zinc-800/80 border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition cursor-pointer"
               title={isMaximized ? 'Réduire' : 'Plein écran'}
             >
               {isMaximized ? (
@@ -172,8 +196,8 @@ export default function LiveLogs() {
 
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition"
-              title={isExpanded ? 'Réduire le panneau' : 'Agrandir le panneau'}
+              className="p-1.5 rounded-lg bg-zinc-800/80 border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition cursor-pointer"
+              title={isExpanded ? 'Replier le terminal' : 'Déplier le terminal'}
             >
               {isExpanded ? (
                 <ChevronDown className="w-3.5 h-3.5" />
@@ -188,25 +212,25 @@ export default function LiveLogs() {
         {isExpanded && (
           <div
             ref={logsContainerRef}
-            className={`p-4 overflow-y-auto space-y-2 select-text ${
+            className={`p-4 overflow-y-auto space-y-1.5 select-text terminal-scroll ${
               isMaximized ? 'flex-1' : 'max-h-64'
             }`}
           >
-            {logs.length === 0 ? (
-              <div className="py-6 text-center text-gray-600 flex flex-col items-center justify-center">
-                <Activity className="w-8 h-8 mb-2 opacity-40 animate-pulse" />
-                <p>En attente d&apos;activité backend...</p>
-                <p className="text-[10px] text-gray-700 mt-0.5">
-                  Effectuez une action (créer tâche, changer statut, ajouter sous-tâche) pour voir les logs en temps réel.
+            {filteredLogs.length === 0 ? (
+              <div className="py-8 text-center text-zinc-500 flex flex-col items-center justify-center">
+                <Activity className="w-7 h-7 mb-2 opacity-30 animate-pulse" />
+                <p className="text-xs">En attente d&apos;activité serveur...</p>
+                <p className="text-[11px] text-zinc-600 mt-1">
+                  Créez ou modifiez des tâches pour observer les mutations GraphQL et logs temps réel.
                 </p>
               </div>
             ) : (
-              logs.map((log) => (
+              filteredLogs.map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-start gap-2.5 py-1 px-2 rounded hover:bg-gray-900/60 transition group font-mono text-[11px] leading-relaxed"
+                  className="flex items-start gap-2.5 py-1 px-2 rounded-md hover:bg-zinc-900/80 transition font-mono text-[11px] leading-relaxed group"
                 >
-                  <span className="text-gray-500 flex-shrink-0 select-none">
+                  <span className="text-zinc-500 flex-shrink-0 select-none">
                     [{formatTime(log.timestamp)}]
                   </span>
 
@@ -224,12 +248,12 @@ export default function LiveLogs() {
                     </span>
                   )}
 
-                  <span className="text-gray-300 flex-1 break-all">
+                  <span className="text-zinc-300 flex-1 break-all">
                     {log.message}
                   </span>
 
                   {log.user && (
-                    <span className="text-gray-500 text-[10px] flex-shrink-0">
+                    <span className="text-zinc-500 text-[10px] flex-shrink-0">
                       @{log.user}
                     </span>
                   )}

@@ -28,33 +28,61 @@ import { useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import TaskCard, { TaskCardView } from './TaskCard';
 import LiveLogs from './LiveLogs';
-import { Plus, ArrowLeft, RefreshCw, Layers, CheckCircle2, Clock, CircleDot } from 'lucide-react';
+import {
+  Plus,
+  ArrowLeft,
+  RefreshCw,
+  Layers,
+  CheckCircle2,
+  Clock,
+  CircleDot,
+  FolderKanban,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 
 const columns = ['todo', 'doing', 'done'] as const;
 type ColumnType = (typeof columns)[number];
 
-const columnConfig: Record<string, { label: string; icon: any; color: string; badge: string; hoverBg: string }> = {
+const columnConfig: Record<
+  string,
+  {
+    label: string;
+    icon: any;
+    accentColor: string;
+    badgeBg: string;
+    badgeText: string;
+    hoverBg: string;
+    dotColor: string;
+  }
+> = {
   todo: {
     label: 'À faire',
     icon: CircleDot,
-    color: 'border-t-indigo-500 bg-slate-50/70',
-    badge: 'bg-indigo-100 text-indigo-700',
-    hoverBg: 'bg-indigo-50/60 ring-2 ring-indigo-300',
+    accentColor: 'border-indigo-400',
+    badgeBg: 'bg-indigo-50 border border-indigo-200/60',
+    badgeText: 'text-indigo-700',
+    hoverBg: 'bg-indigo-50/70 ring-2 ring-indigo-400/50',
+    dotColor: 'bg-indigo-500',
   },
   doing: {
     label: 'En cours',
     icon: Clock,
-    color: 'border-t-amber-500 bg-slate-50/70',
-    badge: 'bg-amber-100 text-amber-700',
-    hoverBg: 'bg-amber-50/60 ring-2 ring-amber-300',
+    accentColor: 'border-amber-400',
+    badgeBg: 'bg-amber-50 border border-amber-200/60',
+    badgeText: 'text-amber-700',
+    hoverBg: 'bg-amber-50/70 ring-2 ring-amber-400/50',
+    dotColor: 'bg-amber-500',
   },
   done: {
     label: 'Terminé',
     icon: CheckCircle2,
-    color: 'border-t-emerald-500 bg-slate-50/70',
-    badge: 'bg-emerald-100 text-emerald-700',
-    hoverBg: 'bg-emerald-50/60 ring-2 ring-emerald-300',
+    accentColor: 'border-emerald-400',
+    badgeBg: 'bg-emerald-50 border border-emerald-200/60',
+    badgeText: 'text-emerald-700',
+    hoverBg: 'bg-emerald-50/70 ring-2 ring-emerald-400/50',
+    dotColor: 'bg-emerald-500',
   },
 };
 
@@ -66,17 +94,19 @@ const dropAnimationConfig: DropAnimation = {
       },
     },
   }),
-  duration: 200,
+  duration: 180,
   easing: 'cubic-bezier(0.2, 0, 0, 1)',
 };
 
 function DroppableColumn({
   column,
   count,
+  onAddTask,
   children,
 }: {
   column: ColumnType;
   count: number;
+  onAddTask: (col: ColumnType) => void;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -90,33 +120,45 @@ function DroppableColumn({
   const config = columnConfig[column] || {
     label: column,
     icon: Layers,
-    color: 'border-t-gray-400 bg-slate-50/70',
-    badge: 'bg-gray-100 text-gray-700',
-    hoverBg: 'bg-indigo-50/60 ring-2 ring-indigo-300',
+    accentColor: 'border-zinc-300',
+    badgeBg: 'bg-zinc-100',
+    badgeText: 'text-zinc-700',
+    hoverBg: 'bg-zinc-100 ring-2 ring-zinc-300',
+    dotColor: 'bg-zinc-400',
   };
   const Icon = config.icon;
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 flex flex-col border border-gray-200 border-t-4 ${
-        config.color
-      } rounded-2xl p-4 min-h-[500px] transition-all duration-200 ${
+      className={`flex-1 flex flex-col bg-zinc-100/60 border border-zinc-200/80 rounded-2xl p-3.5 sm:p-4 min-h-[520px] transition-all duration-200 ${
         isOver ? config.hoverBg : ''
       }`}
     >
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200/80">
+      {/* Column Header */}
+      <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-zinc-200/70">
         <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-gray-600" />
-          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-            {config.label}
+          <span className={`w-2.5 h-2.5 rounded-full ${config.dotColor}`}></span>
+          <h2 className="text-xs font-bold text-zinc-800 uppercase tracking-wider flex items-center gap-1.5">
+            <Icon className="w-3.5 h-3.5 text-zinc-500" />
+            <span>{config.label}</span>
           </h2>
         </div>
-        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${config.badge}`}>
-          {count}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${config.badgeBg} ${config.badgeText}`}>
+            {count}
+          </span>
+          <button
+            onClick={() => onAddTask(column)}
+            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/70 transition cursor-pointer"
+            title={`Ajouter une tâche dans ${config.label}`}
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
+      {/* Column Cards Container */}
       <div className="flex-1 space-y-3">
         {children}
       </div>
@@ -137,13 +179,13 @@ export default function KanbanBoard() {
   const [createTask, { loading: creatingTask }] = useMutation(CREATE_TASK);
   const [updateTaskStatus] = useMutation(UPDATE_TASK_STATUS);
 
-  // Local state for tasks for ultra-smooth optimistic drag & drop
   const [tasks, setTasks] = useState<any[]>([]);
   const [activeTask, setActiveTask] = useState<any | null>(null);
 
   const [title, setTitle] = useState('');
   const [targetStatus, setTargetStatus] = useState<string>('todo');
   const [showModal, setShowModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (data?.getProjectTasks) {
@@ -154,7 +196,7 @@ export default function KanbanBoard() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3, // Start dragging immediately after 3px movement
+        distance: 3,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -179,21 +221,15 @@ export default function KanbanBoard() {
     return result;
   }, [tasks]);
 
-  // Collision detection: check pointer position first, then closest corners
   const collisionDetectionStrategy: CollisionDetection = useCallback((args) => {
-    // 1. Direct pointer collisions
     const pointerCollisions = pointerWithin(args);
     if (pointerCollisions.length > 0) {
       return pointerCollisions;
     }
-
-    // 2. Intersections with rects
     const rectCollisions = rectIntersection(args);
     if (rectCollisions.length > 0) {
       return rectCollisions;
     }
-
-    // 3. Fallback to closest corners
     return closestCorners(args);
   }, []);
 
@@ -217,7 +253,6 @@ export default function KanbanBoard() {
     const activeTaskItem = tasks.find((t) => t.id.toString() === activeId);
     if (!activeTaskItem) return;
 
-    // Is over a column?
     let overColumn: ColumnType | null = null;
     if (columns.includes(overId as ColumnType)) {
       overColumn = overId as ColumnType;
@@ -229,7 +264,6 @@ export default function KanbanBoard() {
     }
 
     if (overColumn && activeTaskItem.status !== overColumn) {
-      // Optimistically move task to new column locally during drag
       setTasks((prevTasks) =>
         prevTasks.map((t) =>
           t.id.toString() === activeId ? { ...t, status: overColumn } : t
@@ -260,7 +294,6 @@ export default function KanbanBoard() {
     const originalTask = data?.getProjectTasks?.find((t: any) => t.id === activeTaskId);
     const initialStatus = originalTask?.status;
 
-    // If status changed from initial server state, call GraphQL mutation
     if (initialStatus !== targetCol) {
       try {
         await updateTaskStatus({
@@ -283,7 +316,6 @@ export default function KanbanBoard() {
         });
       } catch (err) {
         console.error('Failed to update task status:', err);
-        // revert local state on error
         if (data?.getProjectTasks) {
           setTasks(data.getProjectTasks);
         }
@@ -319,20 +351,34 @@ export default function KanbanBoard() {
     }
   };
 
+  const handleOpenAddTaskForColumn = (col: ColumnType) => {
+    setTargetStatus(col);
+    setShowModal(true);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
   if (!projectId || !numProjectId) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Aucun projet sélectionné</h2>
-          <p className="text-gray-500 text-sm mb-6">
-            Veuillez sélectionner un projet depuis votre liste de projets pour afficher son tableau Kanban.
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-md">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
+            <FolderKanban className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-bold text-zinc-900 mb-2">Aucun projet sélectionné</h2>
+          <p className="text-zinc-500 text-xs sm:text-sm mb-6 leading-relaxed">
+            Veuillez choisir un projet depuis votre espace pour afficher et réorganiser son tableau Kanban.
           </p>
           <Link
             href="/project"
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl transition text-sm shadow"
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl transition text-xs sm:text-sm shadow-xs cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Aller aux projets</span>
+            <span>Consulter mes projets</span>
           </Link>
         </div>
       </div>
@@ -341,25 +387,25 @@ export default function KanbanBoard() {
 
   if (loading && !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-        <p className="text-sm text-gray-500">Chargement des tâches...</p>
+      <div className="flex flex-col items-center justify-center min-h-[450px]">
+        <div className="w-9 h-9 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p className="text-xs text-zinc-500 font-medium">Chargement du tableau Kanban...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-12 text-center">
-        <div className="p-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm shadow-xs">
-          <p className="font-bold text-base mb-2">Accès non autorisé ou erreur :</p>
-          <p className="mb-6 text-red-600">{error.message}</p>
+      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+        <div className="p-6 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-sm shadow-xs">
+          <p className="font-bold text-base mb-1">Accès refusé ou erreur serveur</p>
+          <p className="mb-6 text-rose-600 text-xs">{error.message}</p>
           <Link
             href="/project"
-            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-xl transition text-xs shadow-xs"
+            className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2 rounded-xl transition text-xs shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Retourner à mes projets</span>
+            <span>Retourner aux projets</span>
           </Link>
         </div>
       </div>
@@ -369,39 +415,55 @@ export default function KanbanBoard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-zinc-200/80">
         <div className="flex items-center gap-3">
           <Link
             href="/project"
-            className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition"
-            title="Retour aux projets"
+            className="p-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 hover:text-zinc-900 transition shadow-2xs"
+            title="Retour à mes projets"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-gray-900">Tableau Kanban</h1>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">Tableau Kanban</h1>
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80">
                 Projet #{numProjectId}
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Glissez et déposez vos tâches avec prévisualisation fluide
-            </p>
+            <div className="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+              <span className="flex items-center gap-1">
+                <CircleDot className="w-3 h-3 text-indigo-500" />
+                {groupedTasks.todo.length} à faire
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-amber-500" />
+                {groupedTasks.doing.length} en cours
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                {groupedTasks.done.length} terminées
+              </span>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => refetch()}
-            className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition cursor-pointer"
-            title="Rafraîchir"
+            onClick={handleRefresh}
+            className="p-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600 hover:text-zinc-900 transition cursor-pointer shadow-2xs"
+            title="Rafraîchir les tâches"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-indigo-600' : ''}`} />
           </button>
           <button
-            onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl shadow transition text-sm cursor-pointer"
+            onClick={() => {
+              setTargetStatus('todo');
+              setShowModal(true);
+            }}
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-xs hover:shadow-md transition text-xs sm:text-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Nouvelle tâche</span>
@@ -409,7 +471,7 @@ export default function KanbanBoard() {
         </div>
       </div>
 
-      {/* Kanban Drag and Drop Columns with Smooth DragOverlay */}
+      {/* Kanban Columns */}
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetectionStrategy}
@@ -418,12 +480,13 @@ export default function KanbanBoard() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {columns.map((column) => (
             <DroppableColumn
               key={column}
               column={column}
               count={groupedTasks[column]?.length || 0}
+              onAddTask={handleOpenAddTaskForColumn}
             >
               <SortableContext
                 items={(groupedTasks[column] || []).map((task) => task.id.toString())}
@@ -435,15 +498,16 @@ export default function KanbanBoard() {
               </SortableContext>
 
               {(!groupedTasks[column] || groupedTasks[column].length === 0) && (
-                <div className="h-28 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-xs text-gray-400">
-                  Déposez une tâche ici
+                <div className="h-32 border-2 border-dashed border-zinc-200/80 rounded-xl flex flex-col items-center justify-center text-xs text-zinc-400 bg-white/40">
+                  <p className="font-medium">Aucune tâche</p>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">Glissez une tâche ou cliquez sur +</p>
                 </div>
               )}
             </DroppableColumn>
           ))}
         </div>
 
-        {/* High-Fidelity Drag Overlay */}
+        {/* Smooth Drag Overlay */}
         <DragOverlay dropAnimation={dropAnimationConfig}>
           {activeTask ? (
             <TaskCardView task={activeTask} isOverlay={true} />
@@ -457,13 +521,26 @@ export default function KanbanBoard() {
       {/* Modal Créer une Tâche */}
       {showModal &&
         createPortal(
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Créer une nouvelle tâche</h2>
+          <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+            <div className="bg-white p-6 rounded-3xl shadow-2xl w-full max-w-md border border-zinc-100">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-lg font-bold text-zinc-900">Nouvelle tâche</h2>
+                </div>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
               <form onSubmit={handleCreateTask} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
                     Titre de la tâche
                   </label>
                   <input
@@ -473,18 +550,18 @@ export default function KanbanBoard() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="ex: Implémenter l'authentification JWT"
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                    Colonne initiale
+                  <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+                    Colonne de destination
                   </label>
                   <select
                     value={targetStatus}
                     onChange={(e) => setTargetStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+                    className="w-full px-3.5 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition cursor-pointer"
                   >
                     <option value="todo">À faire</option>
                     <option value="doing">En cours</option>
@@ -492,20 +569,20 @@ export default function KanbanBoard() {
                   </select>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-zinc-100">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition cursor-pointer"
+                    className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs sm:text-sm font-medium rounded-xl transition cursor-pointer"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
                     disabled={creatingTask || !title.trim()}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl shadow transition cursor-pointer"
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs sm:text-sm font-medium rounded-xl shadow-xs transition cursor-pointer"
                   >
-                    {creatingTask ? 'Création...' : 'Créer la tâche'}
+                    {creatingTask ? 'Création...' : 'Ajouter la tâche'}
                   </button>
                 </div>
               </form>
