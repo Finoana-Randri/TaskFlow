@@ -86,8 +86,8 @@ export default function ProjectsPage() {
 
   if (!user && !authLoading) {
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-lg">
+      <div className="project-page max-w-none px-4 py-20 text-center">
+        <div className="access-card max-w-md mx-auto p-8 rounded-3xl border text-center">
           <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xs">
             <ShieldAlert className="w-7 h-7" />
           </div>
@@ -118,9 +118,9 @@ export default function ProjectsPage() {
   const myProjects = myProjectsData?.myProjects || [];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full flex-1">
+    <div className="project-page max-w-none px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full flex-1">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-zinc-200/80">
+      <div className="project-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">Mes Projets</h1>
@@ -137,7 +137,7 @@ export default function ProjectsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Creation Form (Left Sidebar) */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-xs sticky top-24">
+          <div className="project-create-card bg-white p-6 rounded-2xl border sticky top-24">
             <div className="flex items-center gap-2.5 mb-4 text-zinc-900 font-bold text-base">
               <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                 <FolderPlus className="w-4 h-4" />
@@ -155,7 +155,7 @@ export default function ProjectsPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="ex: Sprint Backend GraphQL"
+                  placeholder="ex: Sprint Refonte Produit"
                   className="w-full px-3.5 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition"
                 />
               </div>
@@ -187,7 +187,7 @@ export default function ProjectsPage() {
                   <div
                     key={project.id}
                     onClick={() => router.push(`/kanban?projectId=${project.id}`)}
-                    className="bg-white p-5 rounded-2xl border border-zinc-200/80 hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                    className="project-card bg-white p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between group"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-3">
@@ -197,14 +197,14 @@ export default function ProjectsPage() {
 
                         <button
                           onClick={(e) => handleDeleteProject(e, project.id, project.name)}
-                          className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
+                          className="danger-control opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all cursor-pointer"
                           title="Supprimer le projet"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
 
-                      <h3 className="font-bold text-zinc-900 group-hover:text-indigo-600 transition-colors text-base line-clamp-1">
+                      <h3 className="project-card__title font-bold text-zinc-900 transition-colors text-base line-clamp-1">
                         {project.name}
                       </h3>
                       <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1.5">
@@ -213,7 +213,7 @@ export default function ProjectsPage() {
                       </p>
                     </div>
 
-                    <div className="mt-5 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-indigo-600">
+                    <div className="brand-accent mt-5 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold">
                       <span>Ouvrir le Kanban</span>
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-200" />
                     </div>
@@ -222,7 +222,7 @@ export default function ProjectsPage() {
               })}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-zinc-300 p-8">
+            <div className="project-empty text-center py-16 bg-white rounded-3xl border border-dashed p-8">
               <div className="w-14 h-14 rounded-2xl bg-zinc-50 border border-zinc-200 flex items-center justify-center mx-auto mb-4 text-zinc-400">
                 <Kanban className="w-7 h-7" />
               </div>

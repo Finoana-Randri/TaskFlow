@@ -83,15 +83,15 @@ export default function LiveLogs() {
   const getBadgeStyle = (type: string) => {
     switch (type?.toUpperCase()) {
       case 'AUTH':
-        return 'bg-violet-950/80 text-violet-300 border-violet-800/80';
+        return 'log-badge--auth';
       case 'CREATE':
-        return 'bg-emerald-950/80 text-emerald-300 border-emerald-800/80';
+        return 'log-badge--create';
       case 'UPDATE':
-        return 'bg-sky-950/80 text-sky-300 border-sky-800/80';
+        return 'log-badge--update';
       case 'DELETE':
-        return 'bg-rose-950/80 text-rose-300 border-rose-800/80';
+        return 'log-badge--delete';
       default:
-        return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+        return 'log-badge--default';
     }
   };
 
@@ -116,7 +116,7 @@ export default function LiveLogs() {
   return (
     <div className="w-full mt-8">
       <div
-        className={`bg-zinc-950 border border-zinc-800/90 rounded-2xl shadow-xl overflow-hidden transition-all duration-200 font-mono text-xs ${
+        className={`live-logs bg-zinc-950 border border-zinc-800/90 rounded-2xl shadow-xl overflow-hidden transition-all duration-200 font-mono text-xs ${
           isMaximized ? 'fixed inset-4 z-50 flex flex-col' : ''
         }`}
       >
@@ -130,7 +130,7 @@ export default function LiveLogs() {
             </div>
 
             <div className="flex items-center space-x-2 text-zinc-200 font-semibold pl-2 border-l border-zinc-800">
-              <Terminal className="w-3.5 h-3.5 text-indigo-400" />
+              <Terminal className="log-terminal-icon w-3.5 h-3.5" />
               <span className="text-xs">Flux d&apos;activité Backend</span>
             </div>
 
@@ -221,7 +221,7 @@ export default function LiveLogs() {
                 <Activity className="w-7 h-7 mb-2 opacity-30 animate-pulse" />
                 <p className="text-xs">En attente d&apos;activité serveur...</p>
                 <p className="text-[11px] text-zinc-600 mt-1">
-                  Créez ou modifiez des tâches pour observer les mutations GraphQL et logs temps réel.
+                  Créez ou modifiez des tâches pour observer les événements en temps réel.
                 </p>
               </div>
             ) : (
@@ -243,7 +243,7 @@ export default function LiveLogs() {
                   </span>
 
                   {log.action && (
-                    <span className="text-indigo-400 font-medium flex-shrink-0">
+                    <span className="log-action font-medium flex-shrink-0">
                       [{log.action}]
                     </span>
                   )}

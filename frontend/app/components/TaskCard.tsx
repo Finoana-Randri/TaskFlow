@@ -6,7 +6,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { useMutation } from '@apollo/client';
 import { DELETE_TASK } from '../lib/graphql/mutation';
 import { GET_PROJECT_TASKS } from '../lib/graphql/queries';
+import TaskNote from './TaskNote';
 import SubTaskList from './SubTaskList';
+import AttachmentSection from './AttachmentSection';
 import { GripVertical, Trash2 } from 'lucide-react';
 
 export function TaskCardView({
@@ -24,7 +26,7 @@ export function TaskCardView({
 }) {
   return (
     <div
-      className={`bg-white border rounded-xl p-3.5 transition-all duration-200 ${
+      className={`task-card bg-white border rounded-xl p-3.5 transition-all duration-200 ${
         isOverlay
           ? 'shadow-2xl ring-2 ring-indigo-500/60 border-indigo-400 rotate-1 scale-[1.02] cursor-grabbing opacity-95 bg-white'
           : 'border-zinc-200/80 shadow-2xs hover:shadow-md hover:border-zinc-300 group/card'
@@ -50,7 +52,7 @@ export function TaskCardView({
             type="button"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onDelete}
-            className="opacity-0 group-hover/card:opacity-100 text-zinc-400 hover:text-rose-600 p-1 rounded-md hover:bg-rose-50 transition-all cursor-pointer flex-shrink-0"
+            className="danger-control opacity-0 group-hover/card:opacity-100 p-1 rounded-md transition-all cursor-pointer flex-shrink-0"
             title="Supprimer la tâche"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -59,11 +61,24 @@ export function TaskCardView({
       </div>
 
       {projectId && (
-        <SubTaskList
-          taskId={Number(task.id)}
-          projectId={Number(projectId)}
-          subtasks={task.subtasks || []}
-        />
+        <>
+          <TaskNote
+            taskId={Number(task.id)}
+            initialNote={task.note}
+          />
+
+          <SubTaskList
+            taskId={Number(task.id)}
+            projectId={Number(projectId)}
+            subtasks={task.subtasks || []}
+          />
+
+          <AttachmentSection
+            taskId={Number(task.id)}
+            projectId={Number(projectId)}
+            attachments={task.attachments || []}
+          />
+        </>
       )}
     </div>
   );

@@ -1,4 +1,6 @@
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 const { signToken, setAuthCookie, clearAuthCookie } = require('../../utils/auth');
 const { pubsub, ACTIVITY_LOGGED, logActivity, getRecentLogs } = require('../../utils/pubsub');
 
@@ -53,6 +55,66 @@ async function verifySubTaskOwnership(prisma, subTaskId, userId) {
   return subtask;
 }
 
+async function verifyColumnOwnership(prisma, columnId, userId) {
+  const column = await prisma.column.findUnique({
+    where: { id: Number(columnId) },
+    include: { project: true },
+  });
+  if (!column) {
+    throw new Error('Colonne introuvable');
+  }
+  if (column.project.userId !== Number(userId)) {
+    throw new Error('Accès refusé : cette colonne appartient à un autre utilisateur.');
+  }
+  return column;
+}
+
+const DEFAULT_COLUMNS = [
+  { name: 'À faire', slug: 'todo', order: 0, color: 'indigo' },
+  { name: 'En cours', slug: 'doing', order: 1, color: 'amber' },
+  { name: 'Terminé', slug: 'done', order: 2, color: 'emerald' },
+];
+
+async function ensureDefaultColumns(prisma, projectId) {
+  const count = await prisma.column.count({ where: { projectId: Number(projectId) } });
+  if (count === 0) {
+    for (const col of DEFAULT_COLUMNS) {
+      await prisma.column.create({
+        data: {
+          name: col.name,
+          slug: col.slug,
+          order: col.order,
+          color: col.color,
+          projectId: Number(projectId),
+        },
+      });
+    }
+  }
+}
+
+async function ensureValidColumnStatus(prisma, projectId, status) {
+  await ensureDefaultColumns(prisma, projectId);
+  const column = await prisma.column.findFirst({
+    where: {
+      projectId: Number(projectId),
+      slug: status,
+    },
+  });
+
+  if (!column) {
+    throw new Error('Cette colonne n’existe plus dans le projet. Actualisez le tableau puis réessayez.');
+  }
+
+  return column;
+}
+
+function removeUploadedFile(url) {
+  if (!url || !url.startsWith('/uploads/')) return;
+  const relativePath = url.replace(/^\/+/, '');
+  const filePath = path.join(__dirname, '../../../', relativePath);
+  fs.promises.unlink(filePath).catch(() => undefined);
+}
+
 const resolvers = {
   Query: {
     me: async (_, __, { prisma, user }) => {
@@ -65,7 +127,11 @@ const resolvers = {
               tasks: {
                 include: {
                   subtasks: true,
+                  attachments: true,
                 },
+              },
+              columns: {
+                orderBy: { order: 'asc' },
               },
             },
           },
@@ -106,7 +172,11 @@ const resolvers = {
               tasks: {
                 include: {
                   subtasks: true,
+                  attachments: true,
                 },
+              },
+              columns: {
+                orderBy: { order: 'asc' },
               },
             },
           },
@@ -122,7 +192,11 @@ const resolvers = {
           tasks: {
             include: {
               subtasks: true,
+              attachments: true,
             },
+          },
+          columns: {
+            orderBy: { order: 'asc' },
           },
         },
         orderBy: { id: 'desc' },
@@ -139,11 +213,23 @@ const resolvers = {
           tasks: {
             include: {
               subtasks: true,
+              attachments: true,
             },
           },
         },
       });
       return project ? project.tasks : [];
+    },
+
+    getProjectColumns: async (_, { projectId }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyProjectOwnership(prisma, projectId, user.userId);
+      await ensureDefaultColumns(prisma, projectId);
+
+      return prisma.column.findMany({
+        where: { projectId: Number(projectId) },
+        orderBy: { order: 'asc' },
+      });
     },
 
     getRecentLogs: () => {
@@ -263,6 +349,8 @@ const resolvers = {
         },
       });
 
+      await ensureDefaultColumns(prisma, project.id);
+
       logActivity({
         type: 'CREATE',
         action: 'CREATE_PROJECT',
@@ -300,12 +388,15 @@ const resolvers = {
       requireAuth(user);
       await verifyProjectOwnership(prisma, projectId, user.userId);
 
+      const targetStatus = (status || 'todo').trim();
+      await ensureValidColumnStatus(prisma, projectId, targetStatus);
+
       const task = await prisma.task.create({
         data: {
           title,
           projectId: Number(projectId),
-          status: status || 'todo',
-          completed: false,
+          status: targetStatus,
+          completed: targetStatus === 'done',
         },
         include: {
           project: true,
@@ -326,11 +417,16 @@ const resolvers = {
 
     updateTaskStatus: async (_, { taskId, status }, { prisma, user }) => {
       requireAuth(user);
-      await verifyTaskOwnership(prisma, taskId, user.userId);
+      const existingTask = await verifyTaskOwnership(prisma, taskId, user.userId);
+      const targetStatus = status.trim();
+      await ensureValidColumnStatus(prisma, existingTask.projectId, targetStatus);
 
       const task = await prisma.task.update({
         where: { id: Number(taskId) },
-        data: { status },
+        data: {
+          status: targetStatus,
+          completed: targetStatus === 'done',
+        },
         include: {
           subtasks: true,
           project: true,
@@ -342,7 +438,7 @@ const resolvers = {
         action: 'UPDATE_TASK_STATUS',
         message: `Statut de la tâche #${task.id} ("${task.title}") mis à jour -> [${status}]`,
         user: user.name,
-        details: { taskId: task.id, newStatus: status },
+        details: { taskId: task.id, newStatus: targetStatus },
       });
 
       return task;
@@ -372,12 +468,38 @@ const resolvers = {
       return task;
     },
 
+    updateTaskNote: async (_, { taskId, note }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyTaskOwnership(prisma, taskId, user.userId);
+
+      const task = await prisma.task.update({
+        where: { id: Number(taskId) },
+        data: { note: note.trim() },
+        include: {
+          subtasks: true,
+          attachments: true,
+          project: true,
+        },
+      });
+
+      logActivity({
+        type: 'UPDATE',
+        action: 'UPDATE_TASK_NOTE',
+        message: `Note de la tâche #${task.id} mise à jour`,
+        user: user.name,
+        details: { taskId: task.id },
+      });
+
+      return task;
+    },
+
     deleteTask: async (_, { taskId }, { prisma, user }) => {
       requireAuth(user);
       const existing = await verifyTaskOwnership(prisma, taskId, user.userId);
       const id = Number(taskId);
 
       await prisma.subTask.deleteMany({ where: { taskId: id } });
+      await prisma.attachment.deleteMany({ where: { taskId: id } });
       await prisma.task.delete({ where: { id } });
 
       logActivity({
@@ -386,6 +508,139 @@ const resolvers = {
         message: `Tâche supprimée : "${existing.title}" (ID: ${id})`,
         user: user.name,
         details: { taskId: id },
+      });
+
+      return true;
+    },
+
+    createColumn: async (_, { projectId, name, color = 'indigo' }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyProjectOwnership(prisma, projectId, user.userId);
+
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        throw new Error('Le nom de la colonne ne peut pas être vide.');
+      }
+
+      let baseSlug = trimmedName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      if (!baseSlug) baseSlug = 'col';
+
+      let slug = baseSlug;
+      let counter = 1;
+      while (await prisma.column.findFirst({ where: { projectId: Number(projectId), slug } })) {
+        slug = `${baseSlug}-${counter++}`;
+      }
+
+      const lastCol = await prisma.column.findFirst({
+        where: { projectId: Number(projectId) },
+        orderBy: { order: 'desc' },
+      });
+      const order = lastCol ? lastCol.order + 1 : 0;
+
+      const column = await prisma.column.create({
+        data: {
+          name: trimmedName,
+          slug,
+          order,
+          color: color || 'indigo',
+          projectId: Number(projectId),
+        },
+      });
+
+      logActivity({
+        type: 'CREATE',
+        action: 'CREATE_COLUMN',
+        message: `Nouvelle colonne créée : "${column.name}" (Projet #${projectId})`,
+        user: user.name,
+        details: { columnId: column.id, name: column.name, slug: column.slug },
+      });
+
+      return column;
+    },
+
+    renameColumn: async (_, { id, name }, { prisma, user }) => {
+      requireAuth(user);
+      await verifyColumnOwnership(prisma, id, user.userId);
+
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        throw new Error('Le nom de la colonne ne peut pas être vide.');
+      }
+
+      const column = await prisma.column.update({
+        where: { id: Number(id) },
+        data: { name: trimmedName },
+      });
+
+      logActivity({
+        type: 'UPDATE',
+        action: 'RENAME_COLUMN',
+        message: `Colonne #${column.id} renommée en "${column.name}"`,
+        user: user.name,
+      });
+
+      return column;
+    },
+
+    deleteColumn: async (_, { id }, { prisma, user }) => {
+      requireAuth(user);
+      const column = await verifyColumnOwnership(prisma, id, user.userId);
+
+      // A project must always keep one destination for its tasks.
+      const otherCol = await prisma.column.findFirst({
+        where: {
+          projectId: column.projectId,
+          id: { not: column.id },
+        },
+        orderBy: { order: 'asc' },
+      });
+
+      if (!otherCol) {
+        throw new Error('Impossible de supprimer la dernière colonne du projet.');
+      }
+
+      const fallbackStatus = otherCol.slug;
+      await prisma.task.updateMany({
+        where: { projectId: column.projectId, status: column.slug },
+        data: { status: fallbackStatus },
+      });
+
+      await prisma.column.delete({ where: { id: Number(id) } });
+
+      logActivity({
+        type: 'DELETE',
+        action: 'DELETE_COLUMN',
+        message: `Colonne "${column.name}" supprimée (les tâches ont été basculées vers [${fallbackStatus}])`,
+        user: user.name,
+      });
+
+      return true;
+    },
+
+    deleteAttachment: async (_, { id }, { prisma, user }) => {
+      requireAuth(user);
+      const attachment = await prisma.attachment.findUnique({
+        where: { id: Number(id) },
+        include: { task: { include: { project: true } } },
+      });
+      if (!attachment) throw new Error('Pièce jointe introuvable');
+      if (attachment.task.project.userId !== Number(user.userId)) {
+        throw new Error('Accès refusé');
+      }
+
+      await prisma.attachment.delete({ where: { id: Number(id) } });
+      removeUploadedFile(attachment.url);
+
+      logActivity({
+        type: 'DELETE',
+        action: 'DELETE_ATTACHMENT',
+        message: `Document supprimé : "${attachment.name}"`,
+        user: user.name,
       });
 
       return true;
@@ -469,6 +724,13 @@ const resolvers = {
       if (parent.subtasks) return parent.subtasks;
       return prisma.subTask.findMany({ where: { taskId: parent.id } });
     },
+    attachments: async (parent, _, { prisma }) => {
+      if (parent.attachments) return parent.attachments;
+      return prisma.attachment.findMany({
+        where: { taskId: parent.id },
+        orderBy: { createdAt: 'desc' },
+      });
+    },
     project: async (parent, _, { prisma }) => {
       if (parent.project) return parent.project;
       return prisma.project.findUnique({ where: { id: parent.projectId } });
@@ -484,7 +746,15 @@ const resolvers = {
       if (parent.tasks) return parent.tasks;
       return prisma.task.findMany({
         where: { projectId: parent.id },
-        include: { subtasks: true },
+        include: { subtasks: true, attachments: true },
+      });
+    },
+    columns: async (parent, _, { prisma }) => {
+      if (parent.columns) return parent.columns;
+      await ensureDefaultColumns(prisma, parent.id);
+      return prisma.column.findMany({
+        where: { projectId: parent.id },
+        orderBy: { order: 'asc' },
       });
     },
   },
@@ -493,6 +763,12 @@ const resolvers = {
     task: async (parent, _, { prisma }) => {
       if (parent.task) return parent.task;
       return prisma.task.findUnique({ where: { id: parent.taskId } });
+    },
+  },
+
+  Attachment: {
+    createdAt: (parent) => {
+      return parent.createdAt ? new Date(parent.createdAt).toISOString() : new Date().toISOString();
     },
   },
 };

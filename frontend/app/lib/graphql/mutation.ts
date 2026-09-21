@@ -62,6 +62,7 @@ export const CREATE_TASK = gql`
     createTask(title: $title, projectId: $projectId, status: $status) {
       id
       title
+      note
       status
       completed
       projectId
@@ -82,6 +83,7 @@ export const UPDATE_TASK_STATUS = gql`
       status
       completed
       title
+      note
       projectId
       subtasks {
         id
@@ -93,11 +95,21 @@ export const UPDATE_TASK_STATUS = gql`
   }
 `;
 
+export const UPDATE_TASK_NOTE = gql`
+  mutation UpdateTaskNote($taskId: Int!, $note: String!) {
+    updateTaskNote(taskId: $taskId, note: $note) {
+      id
+      note
+    }
+  }
+`;
+
 export const UPDATE_TASK_TITLE = gql`
   mutation UpdateTaskTitle($taskId: Int!, $title: String!) {
     updateTaskTitle(taskId: $taskId, title: $title) {
       id
       title
+      note
       status
       completed
       projectId
@@ -136,5 +148,43 @@ export const TOGGLE_SUBTASK = gql`
 export const DELETE_SUBTASK = gql`
   mutation DeleteSubTask($id: Int!) {
     deleteSubTask(id: $id)
+  }
+`;
+
+export const CREATE_COLUMN = gql`
+  mutation CreateColumn($projectId: Int!, $name: String!, $color: String) {
+    createColumn(projectId: $projectId, name: $name, color: $color) {
+      id
+      name
+      slug
+      order
+      color
+      projectId
+    }
+  }
+`;
+
+export const RENAME_COLUMN = gql`
+  mutation RenameColumn($id: Int!, $name: String!) {
+    renameColumn(id: $id, name: $name) {
+      id
+      name
+      slug
+      order
+      color
+      projectId
+    }
+  }
+`;
+
+export const DELETE_COLUMN = gql`
+  mutation DeleteColumn($id: Int!) {
+    deleteColumn(id: $id)
+  }
+`;
+
+export const DELETE_ATTACHMENT = gql`
+  mutation DeleteAttachment($id: Int!) {
+    deleteAttachment(id: $id)
   }
 `;

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="doc-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fdf4ff" />
+      <stop offset="100%" stop-color="#fae8ff" />
+    </linearGradient>
+    <filter id="doc-shadow" x="-10%" y="-10%" width="125%" height="125%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#a855f7" flood-opacity="0.14" />
+    </filter>
+  </defs>
+
+  <rect width="400" height="300" rx="24" fill="url(#doc-bg)" />
+
+  <!-- Main Card with Attachments -->
+  <rect x="50" y="35" width="300" height="230" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#doc-shadow)" />
+
+  <!-- Card title -->
+  <rect x="75" y="55" width="160" height="12" rx="4" fill="#0f172a" />
+  <rect x="75" y="75" width="250" height="6" rx="3" fill="#cbd5e1" />
+  <rect x="75" y="87" width="180" height="6" rx="3" fill="#e2e8f0" />
+
+  <!-- Attachment 1: PDF Document -->
+  <rect x="75" y="115" width="250" height="42" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+  <rect x="85" y="123" width="26" height="26" rx="6" fill="#fee2e2" />
+  <text x="90" y="140" fill="#dc2626" font-size="10" font-family="system-ui, sans-serif" font-weight="bold">PDF</text>
+  <text x="120" y="134" fill="#1e293b" font-size="11" font-family="system-ui, sans-serif" font-weight="600">Rapport-Trimestre.pdf</text>
+  <text x="120" y="148" fill="#94a3b8" font-size="9" font-family="system-ui, sans-serif">1.4 MB • Prêt pour aperçu</text>
+  <circle cx="305" cy="136" r="9" fill="#e2e8f0" />
+  <path d="M 302 136 L 308 136 M 305 133 L 305 139" stroke="#475569" stroke-width="1.5" stroke-linecap="round" />
+
+  <!-- Attachment 2: Image Preview -->
+  <rect x="75" y="165" width="250" height="42" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+  <rect x="85" y="173" width="26" height="26" rx="6" fill="#dbeafe" />
+  <text x="91" y="190" fill="#2563eb" font-size="10" font-family="system-ui, sans-serif" font-weight="bold">IMG</text>
+  <text x="120" y="184" fill="#1e293b" font-size="11" font-family="system-ui, sans-serif" font-weight="600">Design_System_v2.png</text>
+  <text x="120" y="198" fill="#94a3b8" font-size="9" font-family="system-ui, sans-serif">840 KB • Visualisation directe</text>
+  <circle cx="305" cy="186" r="9" fill="#dbeafe" />
+  <circle cx="305" cy="186" r="3" fill="#2563eb" />
+
+  <!-- Upload bar -->
+  <rect x="75" y="218" width="250" height="32" rx="8" fill="#f5f3ff" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="4 4" />
+  <text x="135" y="238" fill="#7e22ce" font-size="11" font-family="system-ui, sans-serif" font-weight="600">+ Glisser un fichier ici</text>
+</svg>

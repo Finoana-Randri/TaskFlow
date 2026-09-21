@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="hero-grad-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.08" />
+      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.07" />
+    </linearGradient>
+    <linearGradient id="col-grad-1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <linearGradient id="badge-indigo" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+    <linearGradient id="badge-emerald" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <filter id="card-shadow" x="-8%" y="-6%" width="120%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.07" />
+    </filter>
+    <filter id="float-shadow" x="-15%" y="-15%" width="130%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#4f46e5" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- Background Aura & Grids -->
+  <rect width="800" height="500" rx="32" fill="url(#hero-grad-bg)" />
+  <circle cx="120" cy="80" r="160" fill="#6366f1" fill-opacity="0.06" filter="blur(40px)" />
+  <circle cx="700" cy="400" r="140" fill="#06b6d4" fill-opacity="0.08" filter="blur(40px)" />
+  <circle cx="400" cy="250" r="220" fill="#8b5cf6" fill-opacity="0.04" filter="blur(60px)" />
+
+  <!-- Main Window Frame -->
+  <rect x="45" y="45" width="710" height="410" rx="20" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#card-shadow)" />
+
+  <!-- App Header Bar -->
+  <path d="M 45 65 A 20 20 0 0 1 65 45 L 735 45 A 20 20 0 0 1 755 65 L 755 95 L 45 95 Z" fill="#f8fafc" />
+  <line x1="45" y1="95" x2="755" y2="95" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="75" cy="70" r="5" fill="#f87171" />
+  <circle cx="95" cy="70" r="5" fill="#fbbf24" />
+  <circle cx="115" cy="70" r="5" fill="#34d399" />
+  <rect x="150" y="60" width="180" height="20" rx="6" fill="#ede9fe" />
+  <rect x="165" y="66" width="90" height="8" rx="4" fill="#6366f1" />
+  <rect x="630" y="60" width="100" height="20" rx="10" fill="#10b981" fill-opacity="0.12" />
+  <text x="650" y="74" fill="#059669" font-size="10" font-family="system-ui, sans-serif" font-weight="600">Temps Réel</text>
+  <circle cx="642" cy="70" r="3" fill="#10b981" />
+
+  <!-- Kanban Column 1: A FAIRE -->
+  <rect x="75" y="115" width="200" height="315" rx="14" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="98" cy="138" r="4" fill="#6366f1" />
+  <text x="110" y="142" fill="#334155" font-size="12" font-family="system-ui, sans-serif" font-weight="700">À FAIRE</text>
+  <rect x="240" y="130" width="20" height="16" rx="8" fill="#e2e8f0" />
+  <text x="247" y="142" fill="#475569" font-size="10" font-family="system-ui, sans-serif" font-weight="700">3</text>
+
+  <!-- Card 1.1 -->
+  <rect x="90" y="160" width="170" height="84" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" filter="url(#card-shadow)" />
+  <rect x="104" y="174" width="110" height="10" rx="4" fill="#1e293b" />
+  <rect x="104" y="192" width="60" height="6" rx="3" fill="#94a3b8" />
+  <rect x="104" y="210" width="142" height="4" rx="2" fill="#e2e8f0" />
+  <rect x="104" y="210" width="95" height="4" rx="2" fill="#6366f1" />
+  <circle cx="235" cy="180" r="10" fill="#e0e7ff" />
+  <text x="230" y="184" fill="#4338ca" font-size="10" font-family="sans-serif" font-weight="bold">JD</text>
+
+  <!-- Card 1.2 with doc attachment badge -->
+  <rect x="90" y="254" width="170" height="88" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+  <rect x="104" y="268" width="130" height="10" rx="4" fill="#1e293b" />
+  <rect x="104" y="286" width="80" height="6" rx="3" fill="#94a3b8" />
+  <rect x="104" y="308" width="85" height="18" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+  <text x="112" y="321" fill="#475569" font-size="9" font-family="system-ui, sans-serif" font-weight="600">📎 spec.pdf</text>
+
+  <!-- Kanban Column 2: EN COURS -->
+  <rect x="300" y="115" width="200" height="315" rx="14" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="323" cy="138" r="4" fill="#f59e0b" />
+  <text x="335" y="142" fill="#334155" font-size="12" font-family="system-ui, sans-serif" font-weight="700">EN COURS</text>
+  <rect x="465" y="130" width="20" height="16" rx="8" fill="#fef3c7" />
+  <text x="473" y="142" fill="#b45309" font-size="10" font-family="system-ui, sans-serif" font-weight="700">2</text>
+
+  <!-- Card 2.1 Floating Drag Card Effect -->
+  <g filter="url(#float-shadow)" transform="rotate(-3 380 200)">
+    <rect x="315" y="165" width="170" height="100" rx="12" fill="#ffffff" stroke="#6366f1" stroke-width="2" />
+    <rect x="330" y="180" width="120" height="11" rx="4" fill="#0f172a" />
+    <rect x="330" y="199" width="70" height="6" rx="3" fill="#64748b" />
+    <rect x="330" y="218" width="60" height="18" rx="6" fill="#e0e7ff" />
+    <text x="338" y="231" fill="#4338ca" font-size="9" font-family="system-ui, sans-serif" font-weight="700">🖼️ maquette.png</text>
+    <circle cx="460" cy="186" r="10" fill="#fef3c7" />
+    <text x="455" y="190" fill="#d97706" font-size="10" font-family="sans-serif" font-weight="bold">SL</text>
+    <rect x="330" y="246" width="140" height="4" rx="2" fill="#e2e8f0" />
+    <rect x="330" y="246" width="105" height="4" rx="2" fill="#f59e0b" />
+  </g>
+
+  <!-- Kanban Column 3: TERMINE -->
+  <rect x="525" y="115" width="200" height="315" rx="14" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="548" cy="138" r="4" fill="#10b981" />
+  <text x="560" y="142" fill="#334155" font-size="12" font-family="system-ui, sans-serif" font-weight="700">TERMINÉ</text>
+  <rect x="690" y="130" width="20" height="16" rx="8" fill="#d1fae5" />
+  <text x="698" y="142" fill="#065f46" font-size="10" font-family="system-ui, sans-serif" font-weight="700">4</text>
+
+  <!-- Card 3.1 Completed -->
+  <rect x="540" y="160" width="170" height="75" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" opacity="0.9" />
+  <line x1="554" y1="180" x2="650" y2="180" stroke="#10b981" stroke-width="2" />
+  <rect x="554" y="175" width="95" height="10" rx="4" fill="#94a3b8" />
+  <rect x="554" y="195" width="60" height="16" rx="6" fill="#d1fae5" />
+  <text x="563" y="207" fill="#047857" font-size="9" font-family="system-ui, sans-serif" font-weight="700">✓ 4/4 validé</text>
+
+  <!-- Card 3.2 Completed -->
+  <rect x="540" y="245" width="170" height="75" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" opacity="0.9" />
+  <rect x="554" y="260" width="115" height="10" rx="4" fill="#94a3b8" />
+  <rect x="554" y="280" width="70" height="16" rx="6" fill="#d1fae5" />
+  <text x="563" y="292" fill="#047857" font-size="9" font-family="system-ui, sans-serif" font-weight="700">✓ Livré</text>
+</svg>

@@ -79,7 +79,7 @@ export default function SubTaskList({
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="mt-3 pt-3 border-t border-zinc-100" onPointerDown={(e) => e.stopPropagation()}>
+    <div className="subtask-panel mt-3 pt-3 border-t border-zinc-100" onPointerDown={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
           Sous-tâches ({completedCount}/{totalCount})

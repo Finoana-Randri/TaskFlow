@@ -31,20 +31,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 sm:p-10 border border-zinc-200/90 relative">
+    <div className="auth-page">
+      <div className="auth-card relative">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-3.5 shadow-2xs">
+          <div className="auth-brand">
             <CheckSquare className="w-6 h-6 stroke-[2.5]" />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Bon retour</h1>
-          <p className="text-xs sm:text-sm text-zinc-500 mt-1">
+          <h1 className="auth-title">Bon retour</h1>
+          <p className="auth-subtitle text-xs sm:text-sm mt-1">
             Connectez-vous pour accéder à vos tableaux Kanban
           </p>
         </div>
 
         {error && (
-          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200/80 text-rose-700 text-xs rounded-xl flex items-center gap-2.5">
+          <div className="auth-alert mb-5 p-3.5 text-xs flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -52,7 +52,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+            <label className="auth-label">
               Adresse email
             </label>
             <div className="relative">
@@ -64,13 +64,13 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="vous@exemple.com"
-                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition"
+                className="auth-control pl-10 pr-4 py-2.5 text-sm"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+            <label className="auth-label">
               Mot de passe
             </label>
             <div className="relative">
@@ -81,12 +81,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-10 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition"
+                className="auth-control pl-10 pr-10 py-2.5 text-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-1 cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-1 cursor-pointer transition"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -96,7 +96,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-xl shadow-xs hover:shadow-md transition flex items-center justify-center gap-2 cursor-pointer text-sm group"
+            className="auth-submit mt-2 py-2.5 cursor-pointer text-sm group"
           >
             {submitting ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -109,9 +109,9 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-zinc-500">
+        <p className="auth-footer mt-6 text-center text-xs">
           Pas encore de compte ?{' '}
-          <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-700 underline underline-offset-2">
+          <Link href="/register" className="auth-link underline underline-offset-2">
             Créer un compte
           </Link>
         </p>
